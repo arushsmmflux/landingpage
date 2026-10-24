@@ -4,9 +4,9 @@ from urllib.parse import urlparse
 
 app = Flask(__name__)
 
-# ==================================================
-# EDIT YOUR CONTENT HERE
-# ==================================================
+# ==========================================
+# EDIT YOUR PAGE HERE
+# ==========================================
 
 TITLE = "Arush Bot"
 USERNAME = "@arushdev"
@@ -16,25 +16,25 @@ DESCRIPTION = (
     "100% 𝗧𝗥𝗨𝗦𝗧𝗘𝗗 𝗕𝗢𝗧 🔥"
 )
 
-# Colours: black / white / blue etc.
+# Colours
 BG_COLOR = "#000000"
 TEXT_COLOR = "#ffffff"
 BUTTON_COLOR = "#229ED9"
 BUTTON_TEXT_COLOR = "#ffffff"
 
-# Imgbb links (replace with Direct links if needed)
-BACKGROUND_IMAGE = "https://i.ibb.co/tT69L0hD/background.jpg"
-PROFILE_IMAGE = "https://i.ibb.co/Zb15CT/profile.jpg"
+# Paste Imgbb DIRECT image URLs here
+BACKGROUND_IMAGE = "PASTE_BACKGROUND_DIRECT_IMAGE_URL"
+PROFILE_IMAGE = "PASTE_PROFILE_DIRECT_IMAGE_URL"
 
-TELEGRAM_URL = "https://t.me/"
-DOWNLOAD_URL = "https://example.com/download"
+# Telegram button
+TELEGRAM_URL = "https://t.me/YOUR_BOT_USERNAME"
 
 FOOTER = "Powered by Telegram"
 
 
-# ==================================================
+# ==========================================
 # PAGE DESIGN
-# ==================================================
+# ==========================================
 
 PAGE = """
 <!doctype html>
@@ -53,7 +53,13 @@ PAGE = """
     --button-text: {{ button_text_color }};
 }
 
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+}
 
 body {
     margin: 0;
@@ -61,14 +67,14 @@ body {
     min-height: 100dvh;
     padding: 22px 15px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     font-family: Arial, Helvetica, sans-serif;
     background-color: var(--bg);
     {% if background_image %}
-    background-image: linear-gradient(#0006, #0008), url("{{ background_image }}");
+    background-image: url("{{ background_image }}");
     background-size: cover;
-    background-position: center;
+    background-position: center center;
     background-repeat: no-repeat;
     background-attachment: fixed;
     {% endif %}
@@ -78,12 +84,12 @@ body {
 .card {
     width: 100%;
     max-width: 410px;
+    margin-top: 5vh;
     padding: 28px 22px;
     border: 1px solid #ffffff25;
     border-radius: 24px;
     text-align: center;
-    background: #101820cc;
-    backdrop-filter: blur(12px);
+    background: #101820d9;
     overflow-wrap: anywhere;
 }
 
@@ -130,10 +136,11 @@ h1 {
     text-decoration: none;
     font-size: 16px;
     font-weight: bold;
-    transition: filter .15s ease;
 }
 
-.btn:hover { filter: brightness(1.1); }
+.btn:hover {
+    filter: brightness(1.1);
+}
 
 .footer {
     margin-top: 23px;
@@ -142,12 +149,14 @@ h1 {
 }
 
 @media (max-width: 360px) {
-    .card { padding: 23px 16px; }
-    .profile { width: 90px; height: 90px; }
-}
+    .card {
+        padding: 23px 16px;
+    }
 
-@media (prefers-reduced-motion: reduce) {
-    .btn { transition: none; }
+    .profile {
+        width: 90px;
+        height: 90px;
+    }
 }
 </style>
 </head>
@@ -165,12 +174,9 @@ h1 {
     <div class="username">{{ username }}</div>
     <p class="description">{{ description }}</p>
 
-    <a class="btn" href="{{ telegram_url }}" target="_blank" rel="noopener noreferrer">
+    <a class="btn" href="{{ telegram_url }}"
+       target="_blank" rel="noopener noreferrer">
         ✈️ OPEN TELEGRAM
-    </a>
-
-    <a class="btn" href="{{ download_url }}" target="_blank" rel="noopener noreferrer">
-        ⬇️ DOWNLOAD
     </a>
 
     <div class="footer">{{ footer }}</div>
@@ -190,11 +196,17 @@ def valid_https_url(value):
 
 
 def safe_image(value):
-    return value if value and valid_https_url(value) else ""
+    if value and valid_https_url(value):
+        return value
+    return ""
 
 
-def safe_button_url(value, fallback):
-    return value if value and valid_https_url(value) else fallback
+def safe_telegram_url(value):
+    if value and valid_https_url(value):
+        host = (urlparse(value).hostname or "").lower()
+        if host in ("t.me", "www.t.me", "telegram.me", "www.telegram.me"):
+            return value
+    return "https://t.me/"
 
 
 @app.route("/")
@@ -210,8 +222,7 @@ def home():
         button_text_color=BUTTON_TEXT_COLOR,
         background_image=safe_image(BACKGROUND_IMAGE),
         profile_image=safe_image(PROFILE_IMAGE),
-        telegram_url=safe_button_url(TELEGRAM_URL, "https://t.me/"),
-        download_url=safe_button_url(DOWNLOAD_URL, "https://t.me/"),
+        telegram_url=safe_telegram_url(TELEGRAM_URL),
         footer=FOOTER,
     )
 
