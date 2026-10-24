@@ -8,8 +8,8 @@ app = Flask(__name__)
 # EDIT YOUR PAGE HERE
 # ==========================================
 
-TITLE = "Arush Bot"
-USERNAME = "@arushdev"
+TITLE = "𝘼𝘿𝙐𝙇𝙏 𝙑𝙄𝘿𝙀𝙊𝙎 😍"
+USERNAME = "@adultvid12k_bot"
 
 DESCRIPTION = (
     "𝗦𝗧𝗔𝗥𝗧 𝗕𝗢𝗧 𝗔𝗡𝗗 𝗪𝗔𝗧𝗖𝗛 𝗙𝗥𝗘𝗘 𝗗𝗘𝗠𝗢 ❤️\n"
@@ -23,11 +23,11 @@ BUTTON_COLOR = "#229ED9"
 BUTTON_TEXT_COLOR = "#ffffff"
 
 # Paste Imgbb DIRECT image URLs here
-BACKGROUND_IMAGE = "PASTE_BACKGROUND_DIRECT_IMAGE_URL"
-PROFILE_IMAGE = "PASTE_PROFILE_DIRECT_IMAGE_URL"
+BACKGROUND_IMAGE = "https://ibb.co/tT69L0hD"
+PROFILE_IMAGE = "https://ibb.co/Zb15CT"
 
 # Telegram button
-TELEGRAM_URL = "https://t.me/YOUR_BOT_USERNAME"
+TELEGRAM_URL = "https://t.me/adultvid12k_bot"
 
 FOOTER = "Powered by Telegram"
 
