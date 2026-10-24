@@ -1,236 +1,184 @@
-
-from flask import Flask, render_template_string
-from urllib.parse import urlparse
+from flask import Flask, render_template_string, jsonify, abort
+import re
 
 app = Flask(__name__)
 
 # ==========================================
-# EDIT YOUR PAGE HERE
+# EDITABLE SETTINGS (Change your config here)
 # ==========================================
+PAGE_TITLE = "Arush Bot"
+USERNAME = "@arushdev"
+DESCRIPTION = "𝗦𝗧𝗔𝗥𝗧 𝗕𝗢𝗧 𝗔𝗡𝗗 𝗪𝗔𝗧𝗖𝗛 𝗙𝗥𝗘𝗘 𝗗𝗘𝗠𝗢 ❤️\n100% 𝗧𝗥𝗨𝗦𝗧𝗘𝗗 𝗕𝗢𝗧 🔥"
 
-TITLE = "𝘼𝘿𝙐𝙇𝙏 𝙑𝙄𝘿𝙀𝙊𝙎 😍"
-USERNAME = "@adultvid12k_bot"
-
-DESCRIPTION = (
-    "𝗦𝗧𝗔𝗥𝗧 𝗕𝗢𝗧 𝗔𝗡𝗗 𝗪𝗔𝗧𝗖𝗛 𝗙𝗥𝗘𝗘 𝗗𝗘𝗠𝗢 ❤️\n"
-    "100% 𝗧𝗥𝗨𝗦𝗧𝗘𝗗 𝗕𝗢𝗧 🔥"
-)
-
-# Colours
+# Colors
 BG_COLOR = "#000000"
 TEXT_COLOR = "#ffffff"
 BUTTON_COLOR = "#229ED9"
 BUTTON_TEXT_COLOR = "#ffffff"
 
-# Paste Imgbb DIRECT image URLs here
-BACKGROUND_IMAGE = "https://ibb.co/tT69L0hD"
-PROFILE_IMAGE = "https://ibb.co/Zb15CT"
+# Images (IMPORTANT: Replace these with your actual Imgbb DIRECT image URLs ending in .jpg/.png)
+# How to get: Open https://ibb.co/Zb15CT or https://ibb.co/tT69L0hD, right-click the image, 
+# and select "Copy image address". Paste the direct link inside the quotes below.
+PROFILE_PIC_URL = "https://i.ibb.co/placeholder-profile.jpg"  # <-- Paste direct profile image URL here
+BACKGROUND_IMAGE_URL = "https://i.ibb.co/placeholder-bg.jpg"   # <-- Paste direct background image URL here
 
-# Telegram button
-TELEGRAM_URL = "https://t.me/adultvid12k_bot"
+# Telegram Destination
+TELEGRAM_BOT_URL = "https://t.me/arushdev"  # Must be a valid https://t.me/... link
 
-FOOTER = "Powered by Telegram"
+# Footer Text
+FOOTER_TEXT = "Powered by Telegram"
 
 
-# ==========================================
-# PAGE DESIGN
-# ==========================================
+def is_valid_telegram_url(url):
+    """Validates that the URL is a secure, official Telegram link."""
+    pattern = r"^https://t\.me/[a-zA-Z0-9_]{5,}$"
+    return bool(re.match(pattern, url))
 
-PAGE = """
-<!doctype html>
+
+# HTML Template embedded cleanly inside app.py
+HTML_TEMPLATE = """
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="{{ bg_color }}">
-<title>{{ title }}</title>
-
-<style>
-:root {
-    --bg: {{ bg_color }};
-    --text: {{ text_color }};
-    --button: {{ button_color }};
-    --button-text: {{ button_text_color }};
-}
-
-* {
-    box-sizing: border-box;
-}
-
-html {
-    min-height: 100%;
-}
-
-body {
-    margin: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: 22px 15px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: var(--bg);
-    {% if background_image %}
-    background-image: url("{{ background_image }}");
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    {% endif %}
-    color: var(--text);
-}
-
-.card {
-    width: 100%;
-    max-width: 410px;
-    margin-top: 5vh;
-    padding: 28px 22px;
-    border: 1px solid #ffffff25;
-    border-radius: 24px;
-    text-align: center;
-    background: #101820d9;
-    overflow-wrap: anywhere;
-}
-
-.profile {
-    width: 108px;
-    height: 108px;
-    display: block;
-    object-fit: cover;
-    border-radius: 50%;
-    margin: 0 auto 17px;
-    border: 3px solid var(--button);
-    background: #222;
-}
-
-h1 {
-    font-size: clamp(24px, 6vw, 31px);
-    margin: 8px 0;
-}
-
-.username {
-    opacity: .8;
-    margin-bottom: 18px;
-}
-
-.description {
-    white-space: pre-line;
-    overflow-wrap: anywhere;
-    line-height: 1.8;
-    margin: 0 0 24px;
-    font-size: 15px;
-}
-
-.btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    min-height: 50px;
-    padding: 14px 16px;
-    margin-top: 12px;
-    border-radius: 13px;
-    background: var(--button);
-    color: var(--button-text);
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: bold;
-}
-
-.btn:hover {
-    filter: brightness(1.1);
-}
-
-.footer {
-    margin-top: 23px;
-    font-size: 12px;
-    opacity: .7;
-}
-
-@media (max-width: 360px) {
-    .card {
-        padding: 23px 16px;
-    }
-
-    .profile {
-        width: 90px;
-        height: 90px;
-    }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: {{ bg_color }};
+            color: {{ text_color }};
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-image: url('{{ bg_image_url }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 35px 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-top: -40px; /* Positioned slightly above vertical center */
+        }
+        .profile-container {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .username {
+            font-size: 15px;
+            opacity: 0.8;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .description {
+            font-size: 15px;
+            line-height: 1.5;
+            white-space: pre-line;
+            margin-bottom: 30px;
+            opacity: 0.95;
+            padding: 0 10px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            background-color: {{ button_color }};
+            color: {{ button_text_color }};
+            text-decoration: none;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 14px;
+            text-align: center;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 4px 12px rgba(34, 158, 217, 0.4);
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        footer {
+            margin-top: 25px;
+            font-size: 13px;
+            opacity: 0.6;
+        }
+    </style>
 </head>
-
 <body>
-<main class="card">
-
-    {% if profile_image %}
-    <img class="profile" src="{{ profile_image }}" alt="Profile picture">
-    {% else %}
-    <div class="profile" style="display:grid;place-items:center;font-size:38px">✦</div>
-    {% endif %}
-
-    <h1>{{ title }}</h1>
-    <div class="username">{{ username }}</div>
-    <p class="description">{{ description }}</p>
-
-    <a class="btn" href="{{ telegram_url }}"
-       target="_blank" rel="noopener noreferrer">
-        ✈️ OPEN TELEGRAM
-    </a>
-
-    <div class="footer">{{ footer }}</div>
-
-</main>
+    <div class="container">
+        <div class="profile-container">
+            <img src="{{ profile_pic_url }}" alt="{{ page_title }} Profile Picture" class="profile-pic">
+        </div>
+        <h1>{{ page_title }}</h1>
+        <div class="username">{{ username }}</div>
+        <div class="description">{{ description }}</div>
+        <a href="{{ telegram_bot_url }}" class="btn" target="_blank" rel="noopener noreferrer">START BOT</a>
+        <footer>{{ footer_text }}</footer>
+    </div>
 </body>
 </html>
 """
 
 
-def valid_https_url(value):
-    try:
-        parsed = urlparse(value)
-        return parsed.scheme == "https" and bool(parsed.hostname)
-    except Exception:
-        return False
-
-
-def safe_image(value):
-    if value and valid_https_url(value):
-        return value
-    return ""
-
-
-def safe_telegram_url(value):
-    if value and valid_https_url(value):
-        host = (urlparse(value).hostname or "").lower()
-        if host in ("t.me", "www.t.me", "telegram.me", "www.telegram.me"):
-            return value
-    return "https://t.me/"
-
-
 @app.route("/")
-def home():
+def index():
+    if not is_valid_telegram_url(TELEGRAM_BOT_URL):
+        abort(400, description="Invalid Telegram destination configuration.")
+    
     return render_template_string(
-        PAGE,
-        title=TITLE,
+        HTML_TEMPLATE,
+        page_title=PAGE_TITLE,
         username=USERNAME,
         description=DESCRIPTION,
         bg_color=BG_COLOR,
         text_color=TEXT_COLOR,
         button_color=BUTTON_COLOR,
         button_text_color=BUTTON_TEXT_COLOR,
-        background_image=safe_image(BACKGROUND_IMAGE),
-        profile_image=safe_image(PROFILE_IMAGE),
-        telegram_url=safe_telegram_url(TELEGRAM_URL),
-        footer=FOOTER,
+        profile_pic_url=PROFILE_PIC_URL,
+        bg_image_url=BACKGROUND_IMAGE_URL,
+        telegram_bot_url=TELEGRAM_BOT_URL,
+        footer_text=FOOTER_TEXT
     )
 
 
 @app.route("/health")
 def health():
-    return {"ok": True}
+    return jsonify({"status": "healthy", "service": "telegram-landing-page"})
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
