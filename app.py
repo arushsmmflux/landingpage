@@ -1,4 +1,3 @@
-
 from flask import Flask, redirect, render_template_string
 from urllib.parse import urlparse
 
