@@ -6,8 +6,8 @@ app = Flask(__name__)
 # ==========================================
 # EDITABLE SETTINGS (Change your config here)
 # ==========================================
-PAGE_TITLE = "Arush Bot"
-USERNAME = "@arushdev"
+PAGE_TITLE = "𝘼𝘿𝙐𝙇𝙏 𝙑𝙄𝘿𝙀𝙊𝙎 😍"
+USERNAME = "@adultvid12k_bot"
 DESCRIPTION = "𝗦𝗧𝗔𝗥𝗧 𝗕𝗢𝗧 𝗔𝗡𝗗 𝗪𝗔𝗧𝗖𝗛 𝗙𝗥𝗘𝗘 𝗗𝗘𝗠𝗢 ❤️\n100% 𝗧𝗥𝗨𝗦𝗧𝗘𝗗 𝗕𝗢𝗧 🔥"
 
 # Colors
@@ -23,7 +23,7 @@ PROFILE_PIC_URL = "https://i.ibb.co/JSFVPkX/photo-6219553343072311134-x.jpg"  # 
 BACKGROUND_IMAGE_URL = "https://i.ibb.co/sd4ZWTPq/Telegram-Dark-Theme-Default-Background.jpg"   # <-- Paste direct background image URL here
 
 # Telegram Destination
-TELEGRAM_BOT_URL = "https://t.me/arushdev"  # Must be a valid https://t.me/... link
+TELEGRAM_BOT_URL = "https://t.me/adultvid12k_bot"  # Must be a valid https://t.me/... link
 
 # Footer Text
 FOOTER_TEXT = "Powered by Telegram"
