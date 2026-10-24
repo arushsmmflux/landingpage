@@ -19,8 +19,8 @@ BUTTON_TEXT_COLOR = "#ffffff"
 # Images (IMPORTANT: Replace these with your actual Imgbb DIRECT image URLs ending in .jpg/.png)
 # How to get: Open https://ibb.co/Zb15CT or https://ibb.co/tT69L0hD, right-click the image, 
 # and select "Copy image address". Paste the direct link inside the quotes below.
-PROFILE_PIC_URL = "https://i.ibb.co/placeholder-profile.jpg"  # <-- Paste direct profile image URL here
-BACKGROUND_IMAGE_URL = "https://i.ibb.co/placeholder-bg.jpg"   # <-- Paste direct background image URL here
+PROFILE_PIC_URL = "https://i.ibb.co/JSFVPkX/photo-6219553343072311134-x.jpg"  # <-- Paste direct profile image URL here
+BACKGROUND_IMAGE_URL = "https://i.ibb.co/sd4ZWTPq/Telegram-Dark-Theme-Default-Background.jpg"   # <-- Paste direct background image URL here
 
 # Telegram Destination
 TELEGRAM_BOT_URL = "https://t.me/arushdev"  # Must be a valid https://t.me/... link
