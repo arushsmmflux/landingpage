@@ -1,254 +1,197 @@
 
-import os
-import secrets
-from functools import wraps
-from flask import (
-    Flask, request, redirect, url_for, session,
-    render_template_string, make_response
-)
-from supabase import create_client
-
-# =============== CONFIG ===============
-SUPABASE_URL = "https://dmbgkpkkfsdfkppdawzt.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY = "sb_publishable_y18CGzuVHmZXfCCYOJKQkA_iwvb5TDI"
-ADMIN_ID = "arushdev"
-ADMIN_PASSWORD = "arush300"
-FLASK_SECRET_KEY = secrets.token_hex(32)
+from flask import Flask, redirect, render_template_string
+from urllib.parse import urlparse
 
 app = Flask(__name__)
-app.secret_key = FLASK_SECRET_KEY
 
-if SUPABASE_SERVICE_ROLE_KEY == "PASTE_YOUR_SUPABASE_SECRET_KEY":
-    db = None
-else:
-    db = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+# ==================================================
+# EDIT YOUR PAGE HERE
+# ==================================================
 
-DEFAULT_SETTINGS = {
-    "title": "Arush Bot",
-    "username": "@arushdev",
-    "description": "Welcome! Tap below to start.",
-    "start_url": "https://t.me/",
-    "pfp": "",
-    "bg": "#101820",
-    "accent": "#229ED9",
-}
+TITLE = "𝘼𝘿𝙐𝙇𝙏 𝙑𝙄𝘿𝙀𝙊𝙎 😍"
+USERNAME = "@adultvid12k_bot"
+DESCRIPTION = (
+    "𝗦𝗧𝗔𝗥𝗧 𝗕𝗢𝗧 𝗔𝗡𝗗 𝗪𝗔𝗧𝗖𝗛 𝗙𝗥𝗘𝗘 𝗗𝗘𝗠𝗢 ❤️\n"
+    "100% 𝗧𝗥𝗨𝗦𝗧𝗘𝗗 𝗕𝗢𝗧 🔥"
+)
+
+# Colours: "#000000" = black, "#ffffff" = white
+BG_COLOR = "#000000"
+TEXT_COLOR = "#ffffff"
+BUTTON_COLOR = "#229ED9"
+BUTTON_TEXT_COLOR = "#ffffff"
+
+# Imgbb: use the DIRECT image URL, usually ending in .jpg/.png/.webp
+PROFILE_IMAGE = "https://ibb.co/Zb15CT
+BACKGROUND_IMAGE = "https://ibb.co/tT69L0hD"
+
+TELEGRAM_URL = "https://t.me/adultvid12k_bot"
+DOWNLOAD_URL = "https://example.com/download"
+
+# Optional: change to a different heading or footer
+FOOTER = "Powered by Telegram"
+
+
+def valid_url(url, allowed_hosts=None):
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme != "https" or not parsed.hostname:
+            return False
+        if allowed_hosts and parsed.hostname.lower() not in allowed_hosts:
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def safe_image(url):
+    if not url or not valid_url(url):
+        return ""
+    host = urlparse(url).hostname.lower()
+    if host == "ibb.co" or host.endswith(".ibb.co"):
+        return url
+    return url
+
+
+def safe_link(url):
+    return url if valid_url(url) else "https://t.me/"
+
 
 PAGE = """
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ s.title }}</title>
+<meta name="theme-color" content="{{ bg_color }}">
+<title>{{ title }}</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:{{s.bg}};color:white;font-family:Arial,sans-serif;
-display:grid;place-items:center;min-height:100vh;padding:20px}
-.card{width:100%;max-width:390px;text-align:center;padding:30px 22px;
-border:1px solid #ffffff20;border-radius:24px;background:#ffffff0a}
-.avatar{width:100px;height:100px;border-radius:50%;object-fit:cover;
-background:#263746;margin-bottom:14px}
-h1{margin:8px 0;font-size:27px}
-.username{color:#a9c5d5;margin-bottom:18px}
-p{line-height:1.6;color:#e0e8ed;overflow-wrap:anywhere}
-a,.btn{display:block;width:100%;padding:15px;margin-top:12px;
-border-radius:12px;border:0;background:{{s.accent}};color:white;
-text-decoration:none;font-size:16px;font-weight:bold;cursor:pointer}
-.small{font-size:12px;color:#91a2ae;margin-top:22px}
-input,textarea{width:100%;padding:12px;margin:6px 0 14px;border-radius:8px;
-border:1px solid #44515c;background:#111b24;color:white}
-label{display:block;text-align:left;font-size:14px}
+:root {
+  --bg: {{ bg_color }};
+  --text: {{ text_color }};
+  --button: {{ button_color }};
+  --button-text: {{ button_text_color }};
+}
+* { box-sizing: border-box; }
+html { min-height: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background-color: var(--bg);
+  {% if background_image %}
+  background-image: linear-gradient(#0006, #0008), url("{{ background_image }}");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  {% endif %}
+}
+.card {
+  width: 100%;
+  max-width: 400px;
+  padding: 28px 22px;
+  text-align: center;
+  border: 1px solid #ffffff25;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(12px);
+  overflow-wrap: anywhere;
+}
+.avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--button);
+  background: #27313a;
+}
+h1 { font-size: clamp(23px, 6vw, 30px); margin: 8px 0; }
+.username { opacity: .8; margin-bottom: 16px; }
+.description { line-height: 1.65; margin: 0 0 22px; }
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 50px;
+  padding: 14px 18px;
+  margin-top: 12px;
+  border-radius: 13px;
+  background: var(--button);
+  color: var(--button-text);
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: filter .15s ease, transform .15s ease;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: scale(.98); }
+.footer { margin-top: 22px; font-size: 12px; opacity: .7; }
+@media (max-width: 360px) {
+  .card { padding: 24px 16px; }
+  .avatar { width: 88px; height: 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+}
 </style>
 </head>
 <body>
-<div class="card">
-{% if s.pfp %}<img class="avatar" src="{{s.pfp}}" alt="Profile">{% else %}
-<div class="avatar" style="display:inline-grid;place-items:center;font-size:38px">✦</div>
-{% endif %}
-<h1>{{s.title}}</h1>
-<div class="username">{{s.username}}</div>
-<p>{{s.description}}</p>
-<a href="/click">START BOT ↗</a>
-<div class="small">Welcome</div>
-</div>
+<main class="card">
+  {% if profile_image %}
+  <img class="avatar" src="{{ profile_image }}" alt="Profile picture">
+  {% else %}
+  <div class="avatar" style="display:grid;place-items:center;font-size:38px">✦</div>
+  {% endif %}
+  <h1>{{ title }}</h1>
+  <div class="username">{{ username }}</div>
+  <p class="description">{{ description }}</p>
+
+  <a class="btn" href="{{ telegram_url }}" target="_blank" rel="noopener noreferrer">
+    ✈️ Open Telegram
+  </a>
+  <a class="btn" href="{{ download_url }}" target="_blank" rel="noopener noreferrer">
+    ⬇️ Download
+  </a>
+
+  <div class="footer">{{ footer }}</div>
+</main>
 </body>
 </html>
 """
 
-LOGIN_PAGE = """
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{background:#101820;color:white;font-family:Arial;max-width:420px;margin:60px auto;padding:20px}
-input,button{width:100%;padding:13px;margin:8px 0;box-sizing:border-box}
-</style></head><body><h2>Admin Login</h2>
-<form method="post">
-<input name="admin_id" placeholder="Admin ID" required>
-<input name="password" type="password" placeholder="Password" required>
-<button>Login</button></form></body></html>
-"""
-
-ADMIN_PAGE = """
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body{background:#101820;color:white;font-family:Arial;max-width:650px;margin:30px auto;padding:20px}
-input,textarea{width:100%;padding:12px;margin:6px 0 14px;box-sizing:border-box}
-label{display:block}button,a{padding:12px;margin:5px 5px 5px 0;display:inline-block}
-input,textarea{background:#182632;color:white;border:1px solid #44515c;border-radius:7px}
-</style></head><body>
-<h2>Admin Panel</h2>
-<p>Unique visitors: {{visitors}} | Unique clickers: {{clicks}}</p>
-<form method="post" action="/admin/save">
-{% for key,label in fields %}
-<label>{{label}}</label>
-{% if key == 'description' %}
-<textarea name="{{key}}" rows="4">{{s[key]}}</textarea>
-{% else %}
-<input name="{{key}}" value="{{s[key]}}" {% if key in ['bg','accent'] %}type="color"{% endif %}>
-{% endif %}
-{% endfor %}
-<button type="submit">Save Settings</button>
-</form>
-<p><a href="/">View Page</a><a href="/admin/logout">Logout</a></p>
-</body></html>
-"""
-
-def get_settings():
-    if db is None:
-        return DEFAULT_SETTINGS.copy()
-    try:
-        result = db.table("landing_settings").select("value").eq(
-            "key", "main"
-        ).limit(1).execute()
-        if result.data:
-            return {**DEFAULT_SETTINGS, **result.data[0]["value"]}
-    except Exception:
-        app.logger.exception("Could not load settings")
-    return DEFAULT_SETTINGS.copy()
-
-def save_settings(settings):
-    if db is None:
-        return False
-    db.table("landing_settings").upsert(
-        {"key": "main", "value": settings}
-    ).execute()
-    return True
-
-def admin_required(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        if not session.get("is_admin"):
-            return redirect(url_for("admin_login"))
-        return fn(*args, **kwargs)
-    return wrapper
-
-def record_unique(table, visitor_id):
-    if db is None:
-        return
-    try:
-        db.table(table).upsert(
-            {"visitor_id": visitor_id},
-            on_conflict="visitor_id",
-            ignore_duplicates=True
-        ).execute()
-    except Exception:
-        app.logger.exception("Could not record visitor")
-
-def get_count(table):
-    if db is None:
-        return 0
-    try:
-        result = db.table(table).select(
-            "visitor_id", count="exact"
-        ).execute()
-        return result.count or 0
-    except Exception:
-        app.logger.exception("Could not read stats")
-        return 0
 
 @app.route("/")
 def home():
-    s = get_settings()
-    response = make_response(render_template_string(PAGE, s=s))
-    visitor_id = request.cookies.get("visitor_id")
-    if not visitor_id:
-        visitor_id = secrets.token_urlsafe(24)
-        response.set_cookie(
-            "visitor_id", visitor_id,
-            max_age=60*60*24*365,
-            httponly=True, samesite="Lax", secure=request.is_secure
-        )
-    record_unique("landing_visitors", visitor_id)
-    return response
-
-@app.route("/click")
-def click():
-    s = get_settings()
-    visitor_id = request.cookies.get("visitor_id")
-    if visitor_id:
-        record_unique("landing_clicks", visitor_id)
-    destination = s.get("start_url", "https://t.me/")
-    if not destination.startswith(("https://t.me/", "https://telegram.me/")):
-        destination = "https://t.me/"
-    return redirect(destination)
-
-@app.route("/admin/login", methods=["GET", "POST"])
-def admin_login():
-    if request.method == "POST":
-        if (
-            secrets.compare_digest(request.form.get("admin_id", ""), ADMIN_ID)
-            and secrets.compare_digest(request.form.get("password", ""), ADMIN_PASSWORD)
-        ):
-            session.clear()
-            session["is_admin"] = True
-            return redirect(url_for("admin"))
-        return "Invalid login", 401
-    return LOGIN_PAGE
-
-@app.route("/admin")
-@admin_required
-def admin():
-    fields = [
-        ("title", "Page title"),
-        ("username", "Username"),
-        ("description", "Description"),
-        ("start_url", "Telegram start URL"),
-        ("pfp", "Public profile image URL"),
-        ("bg", "Background colour"),
-        ("accent", "Button colour"),
-    ]
     return render_template_string(
-        ADMIN_PAGE, s=get_settings(), fields=fields,
-        visitors=get_count("landing_visitors"),
-        clicks=get_count("landing_clicks")
+        PAGE,
+        title=TITLE,
+        username=USERNAME,
+        description=DESCRIPTION,
+        bg_color=BG_COLOR,
+        text_color=TEXT_COLOR,
+        button_color=BUTTON_COLOR,
+        button_text_color=BUTTON_TEXT_COLOR,
+        profile_image=safe_image(PROFILE_IMAGE),
+        background_image=safe_image(BACKGROUND_IMAGE),
+        telegram_url=safe_link(TELEGRAM_URL),
+        download_url=safe_link(DOWNLOAD_URL),
+        footer=FOOTER,
     )
 
-@app.route("/admin/save", methods=["POST"])
-@admin_required
-def admin_save():
-    old = get_settings()
-    for key in DEFAULT_SETTINGS:
-        value = request.form.get(key, old[key]).strip()
-        if key in ("title", "username", "description"):
-            old[key] = value[:2000]
-        elif key == "start_url":
-            if value.startswith(("https://t.me/", "https://telegram.me/")):
-                old[key] = value
-        elif key == "pfp":
-            if not value or value.startswith("https://"):
-                old[key] = value
-        elif key in ("bg", "accent"):
-            if len(value) == 7 and value.startswith("#"):
-                old[key] = value
-    if not save_settings(old):
-        return "Set the Supabase secret key in app.py first.", 503
-    return redirect(url_for("admin"))
-
-@app.route("/admin/logout")
-def admin_logout():
-    session.clear()
-    return redirect(url_for("admin_login"))
 
 @app.route("/health")
 def health():
-    return {"ok": True, "database_configured": db is not None}
+    return {"ok": True}
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")))
+    app.run(host="0.0.0.0", port=5000)
