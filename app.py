@@ -1,96 +1,279 @@
-import os, json, uuid, re
-from urllib.parse import urlparse
-from flask import Flask, request, render_template_string, redirect, abort, send_from_directory, jsonify
-from werkzeug.utils import secure_filename
+from flask import Flask, request, render_template_string, redirect, abort, send_from_directory
+import os
+import json
+import uuid
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024
-ADMIN_KEY = os.getenv('ADMIN_KEY', '')
-DATA_FILE = '/tmp/telegram_landing_data.json'
-UPLOAD_FOLDER = '/tmp/telegram_landing_uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+ADMIN_KEY = "srkxkeybro"
+DATA_FILE = "data.json"
+UPLOAD_FOLDER = "uploads"
 
-DEFAULTS = {
-    'bot_name': os.getenv('BOT_NAME', 'My Telegram Bot'),
-    'bot_username': os.getenv('BOT_USERNAME', '@your_bot'),
-    'redirect_url': os.getenv('TELEGRAM_URL', 'https://t.me/your_bot'),
-    'sub_text_1': os.getenv('SUB_TEXT_1', 'START THE BOT AND EXPLORE THE DEMO ❤️'),
-    'sub_text_2': os.getenv('SUB_TEXT_2', '100% TRUSTED BOT 🔥'),
-    'profile_pic': os.getenv('PROFILE_IMAGE_URL', ''),
-    'background_url': os.getenv('BACKGROUND_IMAGE_URL', ''),
-    'button_color': os.getenv('BUTTON_COLOR', '#0ea5e9'),
-}
+# Ensure upload folder and data file exist
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+if not os.path.exists(DATA_FILE):
+    with open(DATA_FILE, 'w') as f:
+        json.dump({}, f)
 
 def load_data():
-    try:
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data if isinstance(data, dict) else {}
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return {}
+    with open(DATA_FILE, 'r') as f:
+        return json.load(f)
 
 def save_data(data):
-    tmp = DATA_FILE + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-    os.replace(tmp, DATA_FILE)
+    with open(DATA_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
 
-def valid_telegram_url(value):
-    try:
-        p = urlparse((value or '').strip())
-        return p.scheme == 'https' and p.netloc.lower() in {'t.me', 'www.t.me', 'telegram.me', 'www.telegram.me'} and bool(p.path.strip('/'))
-    except Exception:
-        return False
+# ==========================================
+# 1. MAIN FRONTEND (Landing Page)
+# ==========================================
+FRONTEND_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ bot_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        
+        body {
+            /* Background Image Set */
+            background-color: #0f172a; /* Fallback dark color */
+            background-image: url('/back.jpeg'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+            flex-direction: column; color: white; padding: 20px; position: relative;
+        }
+        
+        /* Overlay taaki background ke upar text clear dikhe */
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.75); /* 75% dark overlay */
+            z-index: 1;
+        }
 
-def safe_slug(value):
-    value = (value or '').strip().lower()
-    value = re.sub(r'[^a-z0-9_-]+', '-', value)
-    return re.sub(r'-{2,}', '-', value).strip('-')[:48]
+        .card {
+            background: rgba(15, 23, 42, 0.95); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px; padding: 40px 20px; width: 100%; max-width: 380px;
+            text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px); z-index: 10;
+        }
+        
+        .profile-container {
+            width: 100px; height: 100px; margin: 0 auto 20px;
+            border-radius: 50%; border: 3px solid #1e293b; padding: 3px; background: #0f172a;
+        }
+        .profile-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        
+        h1 { font-size: 24px; font-weight: 800; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .username { color: #94a3b8; font-size: 14px; margin-bottom: 25px; font-weight: 600; }
+        .sub-text { font-size: 14px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
+        .trust-text { font-size: 14px; font-weight: 600; margin-bottom: 30px; }
+        
+        .start-btn {
+            display: block; width: 100%; background: #0ea5e9; color: white; text-decoration: none;
+            padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800;
+            letter-spacing: 1px; box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+            transition: all 0.3s ease; border: none; cursor: pointer;
+        }
+        .start-btn:hover { background: #0284c7; box-shadow: 0 0 30px rgba(14, 165, 233, 0.6); transform: translateY(-2px); }
+        
+        .powered-by { color: #64748b; font-size: 12px; margin-top: 25px; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="profile-container">
+            <!-- Agar Image.jpeg na mile toh dummy image load hogi -->
+            <img src="/{{ profile_pic }}" alt="Profile" class="profile-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png';">
+        </div>
+        <h1>{{ bot_name }}</h1>
+        <div class="username">{{ bot_username }}</div>
+        <div class="sub-text">{{ sub_text_1 }}</div>
+        <div class="trust-text">{{ sub_text_2 }}</div>
+        <a href="{{ redirect_url }}" target="_blank" class="start-btn">START BOT</a>
+        <div class="powered-by">Powered by Telegram</div>
+    </div>
+</body>
+</html>
+"""
 
-def authorized():
-    return bool(ADMIN_KEY) and (request.args.get('admin', '') == ADMIN_KEY or request.form.get('admin', '') == ADMIN_KEY)
+# ==========================================
+# 2. ADMIN PANEL
+# ==========================================
+ADMIN_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .box { background: #1e293b; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0 15px; border-radius: 5px; border: none; background: #334155; color: white; box-sizing: border-box;}
+        button { padding: 12px; background: #0ea5e9; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%;}
+        button:hover { background: #0284c7; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+        a.btn { background: #ef4444; padding: 5px 10px; color: white; text-decoration: none; border-radius: 5px; font-size: 12px;}
+        a.btn-edit { background: #eab308; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Control Panel</h1>
+        
+        <div class="box">
+            <h2>Create / Edit Bot Link</h2>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="save">
+                <input type="hidden" name="slug" id="edit_slug" value="">
+                
+                <label>Custom Slug (Link name):</label>
+                <input type="text" name="custom_slug" id="custom_slug" required placeholder="e.g. bot1">
+                
+                <label>Bot Name:</label>
+                <input type="text" name="bot_name" id="bot_name" required placeholder="ADULT VIDEOS 😍">
+                
+                <label>Bot Username:</label>
+                <input type="text" name="bot_username" id="bot_username" required placeholder="@adultvid12k_bot">
+                
+                <label>Redirect URL (Start Button):</label>
+                <input type="url" name="redirect_url" id="redirect_url" required placeholder="https://t.me/...">
+                
+                <label>Sub Text 1:</label>
+                <input type="text" name="sub_text_1" id="sub_text_1" value="START BOT AND WATCH FREE DEMO ❤️">
+                
+                <label>Sub Text 2:</label>
+                <input type="text" name="sub_text_2" id="sub_text_2" value="100% TRUSTED BOT 🔥">
+                
+                <label>Profile Pic (Optional - upload new):</label>
+                <input type="file" name="profile_pic" accept="image/*">
+                
+                <button type="submit">Save Bot Link</button>
+            </form>
+        </div>
 
-LANDING_HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ data.bot_name }}</title><style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:22px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#050505;{% if data.background_url %}background-image:url("{{ data.background_url }}");background-size:cover;background-position:center;background-repeat:no-repeat;{% endif %}}body:before{content:"";position:fixed;inset:0;background:#0003;pointer-events:none}.card{position:relative;width:min(100%,390px);margin-top:-4vh;text-align:center;padding:32px 22px;border-radius:22px;background:rgba(10,10,10,.9);border:1px solid #ffffff25;box-shadow:0 20px 60px #0008}.avatar{width:100px;height:100px;margin:0 auto 18px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#202020;border:3px solid #ffffff35}.avatar img{width:100%;height:100%;object-fit:cover}h1{margin:0 0 6px;font-size:25px;overflow-wrap:anywhere}.username{color:#cbd5e1;margin-bottom:24px}.description,.trust{line-height:1.5;overflow-wrap:anywhere}.description{margin:0 0 10px}.trust{margin:0 0 26px}.start{display:block;width:100%;padding:15px 18px;border-radius:12px;background:{{ data.button_color|tojson }};color:white;text-decoration:none;font-weight:800;letter-spacing:.6px}.footer{margin-top:20px;color:#94a3b8;font-size:12px}
-</style></head><body><main class="card"><div class="avatar">{% if data.profile_pic %}<img src="{{ data.profile_pic }}" alt="Profile image">{% else %}<span>🤖</span>{% endif %}</div><h1>{{ data.bot_name }}</h1><div class="username">{{ data.bot_username }}</div><p class="description">{{ data.sub_text_1 }}</p><p class="trust">{{ data.sub_text_2 }}</p><a class="start" href="{{ data.redirect_url }}" target="_blank" rel="noopener noreferrer">START BOT</a><div class="footer">Powered by Telegram</div></main></body></html>'''
+        <div class="box">
+            <h2>Your Links</h2>
+            <table>
+                <tr>
+                    <th>Slug (Link)</th>
+                    <th>Bot Name</th>
+                    <th>Actions</th>
+                </tr>
+                {% for slug, data in bots.items() %}
+                <tr>
+                    <td><a href="/{{ slug }}" target="_blank" style="color:#0ea5e9;">/{{ slug }}</a></td>
+                    <td>{{ data.bot_name }}</td>
+                    <td>
+                        <a href="#" class="btn btn-edit" onclick="editBot('{{ slug }}', '{{ data.bot_name }}', '{{ data.bot_username }}', '{{ data.redirect_url }}')">Edit</a>
+                        <a href="/?admin={{ admin_key }}&delete={{ slug }}" class="btn" onclick="return confirm('Delete this link?')">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
 
-ADMIN_HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin panel</title><style>
-*{box-sizing:border-box}body{margin:0;background:#080d18;color:#f8fafc;font-family:system-ui,sans-serif;padding:20px}.wrap{max-width:850px;margin:auto}.box{background:#111c2e;padding:20px;border:1px solid #ffffff18;border-radius:14px;margin:16px 0}input{display:block;width:100%;padding:12px;margin:7px 0 14px;border:1px solid #334155;border-radius:7px;background:#0b1220;color:white}label{font-size:14px;color:#cbd5e1}button,.btn{display:inline-block;padding:11px 14px;border:0;border-radius:7px;background:#0284c7;color:white;text-decoration:none;font-weight:700;cursor:pointer}.danger{background:#b91c1c}.muted{color:#94a3b8;font-size:13px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #334155;overflow-wrap:anywhere}a{color:#38bdf8}.actions{display:flex;gap:8px;flex-wrap:wrap}
-</style></head><body><div class="wrap"><h1>Telegram Landing Admin</h1><p class="muted">Vercel /tmp storage is temporary; use persistent storage for reliable saved links.</p>
-{% if not is_auth %}<div class="box"><h2>Admin login</h2><form method="get"><label>Admin key</label><input type="password" name="admin" required><button>Open admin panel</button></form></div>{% else %}
-<div class="box"><h2>{{ 'Edit link' if edit_slug else 'Create a link' }}</h2><form method="post" enctype="multipart/form-data"><input type="hidden" name="admin" value="{{ admin_key }}"><input type="hidden" name="old_slug" value="{{ edit_slug or '' }}"><label>Slug</label><input name="slug" required value="{{ edit_slug or '' }}" placeholder="my-bot"><label>Bot name</label><input name="bot_name" required value="{{ current.bot_name }}"><label>Bot username</label><input name="bot_username" value="{{ current.bot_username }}"><label>Telegram URL (https://t.me/your_bot)</label><input type="url" name="redirect_url" required value="{{ current.redirect_url }}"><label>Description line 1</label><input name="sub_text_1" value="{{ current.sub_text_1 }}"><label>Description line 2</label><input name="sub_text_2" value="{{ current.sub_text_2 }}"><label>Profile image URL (optional)</label><input type="url" name="profile_pic" value="{{ current.profile_pic if current.profile_pic and not current.profile_pic.startswith('/uploads/') else '' }}"><label>Or upload profile image (max 8 MB)</label><input type="file" name="profile_file" accept="image/*"><label>Background image URL (optional)</label><input type="url" name="background_url" value="{{ current.background_url }}"><label>Button color hex</label><input name="button_color" value="{{ current.button_color }}"><div class="actions"><button>Save link</button><a class="btn" href="/?admin={{ admin_key }}">Clear form</a></div></form></div>
-<div class="box"><h2>Saved links</h2>{% if bots %}<table><tr><th>Slug</th><th>Bot</th><th>Actions</th></tr>{% for slug,item in bots.items() %}<tr><td><a href="/{{ slug }}" target="_blank">/{{ slug }}</a></td><td>{{ item.bot_name }}</td><td><div class="actions"><a class="btn" href="/?admin={{ admin_key }}&edit={{ slug }}">Edit</a><form method="post" onsubmit="return confirm('Delete this link?')"><input type="hidden" name="admin" value="{{ admin_key }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="slug" value="{{ slug }}"><button class="danger">Delete</button></form></div></td></tr>{% endfor %}</table>{% else %}<p>No links saved yet.</p>{% endif %}</div>{% endif %}</div></body></html>'''
+    <script>
+        function editBot(slug, name, username, url) {
+            document.getElementById('edit_slug').value = slug;
+            document.getElementById('custom_slug').value = slug;
+            document.getElementById('bot_name').value = name;
+            document.getElementById('bot_username').value = username;
+            document.getElementById('redirect_url').value = url;
+            window.scrollTo(0,0);
+        }
+    </script>
+</body>
+</html>
+"""
 
-@app.get('/health')
-def health():
-    return jsonify(status='ok'), 200
+@app.route('/<path:path>')
+def serve_static(path):
+    # Check if file exists in root folder (jaise back.jpeg ya Image.jpeg)
+    if os.path.exists(path) and os.path.isfile(path):
+        return send_from_directory('.', path)
+    # Agar file nahi hai, toh slug page handle karega
+    return show_bot(path)
 
 @app.route('/', methods=['GET', 'POST'])
-def home():
-    if request.method == 'GET' and not request.args.get('admin'):
-        return render_template_string(LANDING_HTML, data=DEFAULTS)
-    if not ADMIN_KEY:
-        return 'Admin panel disabled: set ADMIN_KEY in Vercel Environment Variables.', 503
-    is_auth = authorized()
-    if not is_auth:
-        return render_template_string(ADMIN_HTML, is_auth=False, admin_key='', bots={}, edit_slug=None, current=DEFAULTS)
-    bots = load_data()
-    if request.method == 'POST':
-        slug = safe_slug(request.form.get('slug', ''))
-        if request.form.get('action') == 'delete':
-            old = bots.pop(slug, None)
-            if old and old.get('profile_pic', '').startswith('/uploads/'):
-                try: os.remove(os.path.join(UPLOAD_FOLDER, os.path.basename(old['profile_pic'])))
-                except OSError: pass
+def main():
+    # Check if it's admin route
+    admin = request.args.get('admin')
+    
+    if admin == ADMIN_KEY:
+        bots = load_data()
+        
+        # Handle Delete
+        del_slug = request.args.get('delete')
+        if del_slug and del_slug in bots:
+            del bots[del_slug]
             save_data(bots)
-            return redirect('/?admin=' + ADMIN_KEY)
-        if not slug:
-            return 'Please enter a valid slug.', 400
-        redirect_url = request.form.get('redirect_url', '').strip()
-        if not valid_telegram_url(redirect_url):
-            return 'Telegram URL must be a valid https://t.me/... URL.', 400
-        old_slug = safe_slug(request.form.get('old_slug', ''))
-        if slug in bots and slug != old_slug:
-            return 'That slug is already in use. Choose another.', 400
-        profile_pic = request.form.get('profile_pic', '').strip()
-        if not profile_pic and old_slug in bots:
+            return redirect(f"/?admin={ADMIN_KEY}")
+
+        # Handle Form Submit
+        if request.method == 'POST' and request.form.get('action') == 'save':
+            slug = request.form.get('custom_slug').strip().replace(' ', '-').lower()
+            old_slug = request.form.get('slug')
+            
+            existing_data = bots.get(slug, {})
+            profile_pic = existing_data.get('profile_pic', 'Image.jpeg')
+
+            if 'profile_pic' in request.files:
+                file = request.files['profile_pic']
+                if file.filename != '':
+                    filename = str(uuid.uuid4()) + os.path.splitext(file.filename)[1]
+                    filepath = os.path.join(UPLOAD_FOLDER, filename)
+                    file.save(filepath)
+                    profile_pic = filepath
+
+            bots[slug] = {
+                'bot_name': request.form.get('bot_name'),
+                'bot_username': request.form.get('bot_username'),
+                'redirect_url': request.form.get('redirect_url'),
+                'sub_text_1': request.form.get('sub_text_1'),
+                'sub_text_2': request.form.get('sub_text_2'),
+                'profile_pic': profile_pic
+            }
+            
+            if old_slug and old_slug != slug and old_slug in bots:
+                del bots[old_slug]
+                
+            save_data(bots)
+            return redirect(f"/?admin={ADMIN_KEY}")
+
+        return render_template_string(ADMIN_HTML, bots=bots, admin_key=ADMIN_KEY)
+    
+    # If main URL is opened without slug
+    elif request.path == '/':
+        abort(400, description="400 Bad Request. This URL is invalid.")
+        
+    return "Not Found", 404
+
+@app.route('/<slug>')
+def show_bot(slug):
+    # Flask routing fix: agar static file serve ho gayi ho toh wapas mat aana
+    if os.path.exists(slug) and os.path.isfile(slug):
+        return send_from_directory('.', slug)
+
+    bots = load_data()
+    if slug in bots:
+        data = bots[slug]
+        return render_template_string(FRONTEND_HTML, **data)
+    else:
+        abort(404, description="Bot Link Not Found")
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8000)
