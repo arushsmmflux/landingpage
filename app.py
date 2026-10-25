@@ -6,7 +6,7 @@ import uuid
 app = Flask(__name__)
 ADMIN_KEY = "srkxkeybro"
 DATA_FILE = "data.json"
-UPLOAD_FOLDER = "uploads"
+UPLOAD_FOLDER = "/tmp/uploads"
 
 # Ensure upload folder and data file exist
 if not os.path.exists(UPLOAD_FOLDER):
