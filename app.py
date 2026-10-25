@@ -13,6 +13,11 @@ import uuid
 
 app = Flask(__name__)
 
+@app.route("/health")
+def health():
+    return "Flask app is running!", 200
+
+
 ADMIN_KEY = "srkxkeybro"
 
 # Vercel par writable temporary storage
