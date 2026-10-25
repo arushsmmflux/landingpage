@@ -1,25 +1,43 @@
-from flask import Flask, request, render_template_string, redirect, abort, send_from_directory
+
+from flask import (
+    Flask,
+    request,
+    render_template_string,
+    redirect,
+    abort,
+    send_from_directory
+)
 import os
 import json
 import uuid
 
 app = Flask(__name__)
+
 ADMIN_KEY = "srkxkeybro"
-DATA_FILE = "data.json"
+
+# Vercel par writable temporary storage
+DATA_FILE = "/tmp/data.json"
 UPLOAD_FOLDER = "/tmp/uploads"
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Create JSON file if it doesn't exist
 if not os.path.exists(DATA_FILE):
-    with open(DATA_FILE, 'w') as f:
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump({}, f)
 
+
 def load_data():
-    with open(DATA_FILE, 'r') as f:
-        return json.load(f)
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
 
 def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=4)
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 # ==========================================
 # 1. MAIN FRONTEND (Landing Page)
